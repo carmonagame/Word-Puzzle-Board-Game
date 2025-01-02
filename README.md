@@ -1,3 +1,13 @@
+Hey Hack Clubbers
+
+here is how to play my game
+
+Controls:
+
+Touch buttons on mobile devices
+Mouse clicks also work for the control buttons
+
+
 Game features:
    - 3-minute timer
    - Score tracking (10 points per letter in found words)
@@ -12,3 +22,5 @@ To play:
 4. Try to find all words before time runs out
 
 The game includes some built-in words like PUZZLE, GAME, BOARD
+
+Thanks
