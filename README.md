@@ -1,11 +1,10 @@
 Hey Hack Clubbers
 
-here is how to play my game
+here is how to play
 
 Controls:
 
-Touch buttons on mobile devices
-Mouse clicks also work for the control buttons
+Touch buttons on mobile devices - Mouse clicks also work for the control buttons
 
 
 Game features:
