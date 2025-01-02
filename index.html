@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Word Puzzle Board Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f2f5;
+            padding: 10px;
+        }
+
+        .game-container {
+            background: white;
+            padding: clamp(10px, 3vw, 20px);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: min(95vw, 800px);
+            width: 100%;
+            margin: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: clamp(10px, 3vw, 20px);
+        }
+
+        .header h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: 10px;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: clamp(2px, 0.5vw, 4px);
+            margin-bottom: clamp(10px, 3vw, 20px);
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.8rem, 3vw, 1.25rem);
+            font-weight: bold;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: none;
+        }
+
+        .cell:hover {
+            background: #f0f0f0;
+        }
+
+        .cell.selected {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(5px, 2vw, 10px);
+            margin-bottom: clamp(10px, 3vw, 20px);
+            justify-content: center;
+        }
+
+        button {
+            padding: clamp(8px, 2vw, 10px) clamp(15px, 4vw, 20px);
+            border: none;
+            border-radius: 5px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            transition: background 0.2s;
+            min-width: 120px;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            background: #1976d2;
+            transform: scale(0.98);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .timer, .score {
+            font-size: clamp(1rem, 3vw, 1.25rem);
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #f5f5f5;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .timer {
+            color: #f44336;
+        }
+
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(5px, 2vw, 10px);
+            margin-top: clamp(10px, 3vw, 20px);
+            justify-content: center;
+        }
+
+        .word-item {
+            background: #e3f2fd;
+            padding: clamp(4px, 1.5vw, 5px) clamp(8px, 2vw, 10px);
+            border-radius: 15px;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+        }
+
+        .word-item.found {
+            background: #c8e6c9;
+            text-decoration: line-through;
+        }
+
+        @media (max-width: 400px) {
+            .game-container {
+                padding: 8px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+
+        /* Prevent pull-to-refresh on mobile */
+        html, body {
+            overscroll-behavior-y: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Word Puzzle</h1>
+            <div class="stats-container">
+                <div class="timer">Time: <span id="time">03:00</span></div>
+                <div class="score">Score: <span id="score">0</span></div>
+            </div>
+        </div>
+        <div class="controls">
+            <button onclick="startGame()">New Game</button>
+            <button onclick="checkWord()">Check Word</button>
+        </div>
+        <div id="gameBoard" class="game-board"></div>
+        <div id="wordList" class="word-list"></div>
+    </div>
+
+    <script>
+        const words = ['PUZZLE', 'GAME', 'BOARD', 'PLAY', 'WORD', 'FIND', 'SEARCH', 'SCORE', 'TIME', 'WIN'];
+        let score = 0;
+        let timeLeft = 180;
+        let timer;
+        let selectedCells = [];
+        let foundWords = new Set();
+        let touchStarted = false;
+
+        function createBoard() {
+            const board = [];
+            const size = 10;
+            
+            // Fill board with random letters
+            for (let i = 0; i < size; i++) {
+                board[i] = [];
+                for (let j = 0; j < size; j++) {
+                    board[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                }
+            }
+
+            // Place words on board
+            words.forEach(word => {
+                const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+                let placed = false;
+                while (!placed) {
+                    const row = Math.floor(Math.random() * size);
+                    const col = Math.floor(Math.random() * size);
+                    
+                    if (direction === 'horizontal' && col + word.length <= size) {
+                        if (canPlaceWord(board, word, row, col, direction)) {
+                            placeWord(board, word, row, col, direction);
+                            placed = true;
+                        }
+                    } else if (direction === 'vertical' && row + word.length <= size) {
+                        if (canPlaceWord(board, word, row, col, direction)) {
+                            placeWord(board, word, row, col, direction);
+                            placed = true;
+                        }
+                    }
+                }
+            });
+
+            return board;
+        }
+
+        function canPlaceWord(board, word, row, col, direction) {
+            if (direction === 'horizontal') {
+                for (let i = 0; i < word.length; i++) {
+                    if (board[row][col + i] !== word[i] && board[row][col + i] !== String.fromCharCode(65 + Math.floor(Math.random() * 26))) {
+                        return false;
+                    }
+                }
+            } else {
+                for (let i = 0; i < word.length; i++) {
+                    if (board[row + i][col] !== word[i] && board[row + i][col] !== String.fromCharCode(65 + Math.floor(Math.random() * 26))) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function placeWord(board, word, row, col, direction) {
+            if (direction === 'horizontal') {
+                for (let i = 0; i < word.length; i++) {
+                    board[row][col + i] = word[i];
+                }
+            } else {
+                for (let i = 0; i < word.length; i++) {
+                    board[row + i][col] = word[i];
+                }
+            }
+        }
+
+        function renderBoard(board) {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            
+            board.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    cellElement.textContent = cell;
+                    cellElement.dataset.row = i;
+                    cellElement.dataset.col = j;
+                    
+                    // Add touch events
+                    cellElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+                    cellElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    cellElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+                    
+                    // Add mouse events
+                    cellElement.addEventListener('mousedown', handleMouseDown);
+                    cellElement.addEventListener('mouseover', handleMouseOver);
+                    cellElement.addEventListener('mouseup', handleMouseUp);
+                    
+                    gameBoard.appendChild(cellElement);
+                });
+            });
+        }
+
+        // Touch handling
+        function handleTouchStart(e) {
+            touchStarted = true;
+            toggleCell(e.target);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!touchStarted) return;
+
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('cell')) {
+                if (!element.classList.contains('selected')) {
+                    toggleCell(element);
+                }
+            }
+        }
+
+        function handleTouchEnd() {
+            touchStarted = false;
+        }
+
+        // Mouse handling
+        let mouseDown = false;
+
+        function handleMouseDown(e) {
+            mouseDown = true;
+            toggleCell(e.target);
+        }
+
+        function handleMouseOver(e) {
+            if (mouseDown) {
+                toggleCell(e.target);
+            }
+        }
+
+        function handleMouseUp() {
+            mouseDown = false;
+        }
+
+        // Add global mouse up handler
+        document.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+
+        function toggleCell(cell) {
+            if (!cell.classList.contains('selected')) {
+                cell.classList.add('selected');
+                selectedCells.push(cell);
+            }
+        }
+
+        function checkWord() {
+            const word = selectedCells
+                .sort((a, b) => {
+                    const rowDiff = parseInt(a.dataset.row) - parseInt(b.dataset.row);
+                    return rowDiff === 0 ? parseInt(a.dataset.col) - parseInt(b.dataset.col) : rowDiff;
+                })
+                .map(cell => cell.textContent)
+                .join('');
+
+            if (words.includes(word) && !foundWords.has(word)) {
+                foundWords.add(word);
+                score += word.length * 10;
+                document.getElementById('score').textContent = score;
+                updateWordList();
+                
+                selectedCells.forEach(cell => {
+                    cell.style.background = '#c8e6c9';
+                });
+                
+                if (foundWords.size === words.length) {
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        alert('Congratulations! You found all words!');
+                    }, 100);
+                }
+            }
+
+            selectedCells.forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            selectedCells = [];
+        }
+
+        function updateWordList() {
+            const wordList = document.getElementById('wordList');
+            wordList.innerHTML = '';
+            
+            words.forEach(word => {
+                const wordElement = document.createElement('div');
+                wordElement.className = `word-item ${foundWords.has(word) ? 'found' : ''}`;
+                wordElement.textContent = word;
+                wordList.appendChild(wordElement);
+            });
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('time').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft === 0) {
+                clearInterval(timer);
+                setTimeout(() => {
+                    alert('Time\'s up! Game Over!');
+                }, 100);
+            } else {
+                timeLeft--;
+            }
+        }
+
+        function startGame() {
+            // Reset game state
+            score = 0;
+            timeLeft = 180;
+            selectedCells = [];
+            foundWords.clear();
+            
+            document.getElementById('score').textContent = score;
+            clearInterval(timer);
+            timer = setInterval(updateTimer, 1000);
+            
+            // Create and render new board
+            const board = createBoard();
+            renderBoard(board);
+            updateWordList();
+            updateTimer();
+        }
+
+        // Initialize game on load
+        startGame();
+    </script>
+</body>
+</html>
