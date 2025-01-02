@@ -1,0 +1,78 @@
+/* General styling */
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f4f4f9;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-top: 20px;
+}
+
+p {
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* Styling the game board */
+#board {
+  display: grid;
+  justify-content: center;
+  gap: 5px; /* Space between grid items */
+  margin: 20px auto;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer; /* Makes it look clickable */
+}
+
+.cell:hover {
+  background-color: #f0f0f0; /* Highlight on hover */
+}
+
+/* Highlight found words */
+.found {
+  background-color: #c3e88d; /* Green for found words */
+}
+
+/* Styling buttons or input areas */
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+input[type="text"] {
+  padding: 10px;
+  font-size: 1rem;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 600px) {
+  .cell {
+    width: 30px; /* Smaller cells on smaller screens */
+    height: 30px;
+    font-size: 1rem;
+    margin-bottom:-
