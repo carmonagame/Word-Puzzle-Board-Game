@@ -22,4 +22,4 @@ To play:
 
 The game includes some built-in words like PUZZLE, GAME, BOARD
 
-Thanks
+
